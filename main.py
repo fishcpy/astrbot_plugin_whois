@@ -137,10 +137,8 @@ class Main(Star):
             logger.error(f"查询域名 {domain} 时出错: {e}")
             response = f"查询域名 {domain} 信息时出错: {e}"
 
-        response += "\n\n插件 BY FishCpy, 翻译 BY AcoFork"
-
+        response += "\n\n插件 BY Fishcpy, 翻译 BY AcoFork"
         response += "\n\n开源于https://github.com/fishcpy/astrbot_plugin_whois"
-
         response += "\n\n由克劳德4在2小时内完成主要开发及BUG修复"
 
         yield event.plain_result(response)
