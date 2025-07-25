@@ -1,0 +1,5 @@
+name: astrbot_plugin_whois # 这是你的插件的唯一识别名。
+desc: whois查询 BY Fishcpy。 # 插件简短描述
+version: v1.0.0 # 插件版本号。格式：v1.1.1 或者 v1.1
+author: fishcpy # 作者
+repo: https://github.com/fishcpy/astrbot_plugin_whois # 插件的仓库地址
