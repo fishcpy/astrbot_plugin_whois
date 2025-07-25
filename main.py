@@ -6,36 +6,92 @@ import socket
 
 # 创建翻译字典
 translation_dict = {
+    # 基本域名信息
     'domain_name': '域名',
+    'domain': '域名',
+    'domain_name_servers': '域名服务器',
     'registrar': '注册商',
+    'registrar_name': '注册商名称',
     'whois_server': 'WHOIS服务器',
     'referral_url': '推荐链接',
+    'registrar_url': '注册商网址',
+    'registrar_id': '注册商ID',
+    'registrar_iana_id': '注册商IANA ID',
+    
+    # 日期信息
     'updated_date': '更新日期',
     'creation_date': '创建日期',
     'expiration_date': '到期日期',
-    'name_servers': '名称服务器（DS解析）',
-    'status': '状态',
-    'emails': '邮箱',
-    'dnssec': 'DNSSEC',
-    'print_date': '打印日期',
+    'registry_expiry_date': '注册局到期日期',
+    'registrar_registration_expiration_date': '注册商到期日期',
+    'last_updated': '最后更新',
     'last_update': '最后更新',
-    'name': '姓名',
-    'org': '组织',
-    'address': '地址',
-    'city': '城市',
-    'state': '省份',
-    'registrant_postal_code': '邮政编码',
-    'country': '国家',
-    'registrant_name': '注册人姓名',
-    'registrant_address': '注册人地址',
-    'registrant_phone_number': '注册人电话',
+    'print_date': '打印日期',
+    
+    # 名称服务器
+    'name_servers': '名称服务器（DNS解析）',
+    'nserver': '名称服务器',
+    'nameserver': '名称服务器',
+    'name_server': '名称服务器',
+    
+    # 状态信息
+    'status': '状态',
+    'domain_status': '域名状态',
+    'registry_domain_status': '注册局域名状态',
+    'registrar_domain_status': '注册商域名状态',
+    
+    # 联系信息
+    'emails': '邮箱',
+    'email': '邮箱',
     'registrant_email': '注册人邮箱',
     'admin_email': '管理员邮箱',
     'billing_email': '账单邮箱',
     'tech_email': '技术支持邮箱',
+    'registrant_name': '注册人姓名',
+    'registrant_organization': '注册人组织',
+    'registrant_address': '注册人地址',
+    'registrant_phone': '注册人电话',
+    'registrant_phone_number': '注册人电话',
+    'registrant_postal_code': '注册人邮政编码',
+    'registrant_city': '注册人城市',
+    'registrant_state': '注册人省份',
+    'registrant_country': '注册人国家',
+    
+    # 管理联系人
+    'admin_name': '管理员姓名',
+    'admin_organization': '管理员组织',
+    'admin_address': '管理员地址',
+    'admin_phone': '管理员电话',
+    'admin_city': '管理员城市',
+    'admin_state': '管理员省份',
+    'admin_country': '管理员国家',
+    
+    # 技术联系人
+    'tech_name': '技术联系人姓名',
+    'tech_organization': '技术联系人组织',
+    'tech_address': '技术联系人地址',
+    'tech_phone': '技术联系人电话',
+    'tech_city': '技术联系人城市',
+    'tech_state': '技术联系人省份',
+    'tech_country': '技术联系人国家',
+    
+    # 其他信息
+    'dnssec': 'DNSSEC',
+    'name': '姓名',
+    'org': '组织',
+    'organization': '组织',
+    'address': '地址',
+    'city': '城市',
+    'state': '省份',
+    'country': '国家',
+    'postal_code': '邮政编码',
+    'phone': '电话',
+    'fax': '传真',
     'domain__id': '域名ID',
-    'registrar_id': '注册商ID',
-    'registrar_url': '注册商网址',
+    'registry_domain_id': '注册局域名ID',
+    'registrar_whois_server': '注册商WHOIS服务器',
+    'registrar_abuse_contact_email': '注册商滥用联系邮箱',
+    'registrar_abuse_contact_phone': '注册商滥用联系电话',
 }
 
 @register("astrbot_plugin_whois", "YourName", "一个域名 WHOIS 查询插件", "1.0.0")
@@ -108,24 +164,39 @@ class Main(Star):
                     logger.info(f"手动查询原始结果: {raw[:200]}...")
                     result = {}
                     for line in raw.splitlines():
-                        if ':' in line and not line.strip().startswith('%') and not line.strip().startswith('#'):
-                            key, value = line.split(':', 1)
-                            key = key.strip().lower().replace(' ', '_').replace('-', '_')
-                            value = value.strip()
-                            if value:  # 只保存非空值
-                                result[key] = value
+                        line = line.strip()
+                        if ':' in line and not line.startswith('%') and not line.startswith('#') and not line.startswith('>>>') and not line.startswith('For more information'):
+                            # 处理包含冒号的行
+                            parts_line = line.split(':', 1)
+                            if len(parts_line) == 2:
+                                key, value = parts_line
+                                key = key.strip().lower()
+                                value = value.strip()
+                                
+                                # 清理键名，移除特殊字符
+                                key = key.replace(' ', '_').replace('-', '_').replace('/', '_')
+                                
+                                # 过滤掉无用的值
+                                if value and value != 'REDACTED FOR PRIVACY' and not value.startswith('Please query') and not value.startswith('Select Contact'):
+                                    result[key] = value
 
             if result and isinstance(result, dict):
                 # 过滤掉空值和无用信息
                 filtered_result = {k: v for k, v in result.items() if v and str(v).strip() and str(v).strip() != 'None'}
                 
                 if filtered_result:
-                    whois_info = "\n".join(
-                        f"{translation_dict.get(key, key)}: {value}"
-                        for key, value in filtered_result.items() if value
-                    )
+                    whois_info = []
+                    for key, value in filtered_result.items():
+                        if value:
+                            # 获取翻译后的键名
+                            translated_key = translation_dict.get(key, key)
+                            # 如果是列表，转换为字符串
+                            if isinstance(value, list):
+                                value = ', '.join(str(v) for v in value if v)
+                            whois_info.append(f"{translated_key}: {value}")
+                    
                     if whois_info:
-                        response = f"域名信息 ({domain}):\n{whois_info}"
+                        response = f"域名信息 ({domain}):\n" + "\n".join(whois_info)
                     else:
                         response = f"无法获取域名 {domain} 的详细信息，可能需要手动查询。"
                 else:
