@@ -1,9 +1,6 @@
-# helloworld
+# WHOIS插件
 
-AstrBot 插件模板
+安装后请前往控制台页面安装pip拓展 whois 和 pyhton-whois
+docker 安装 astrbot 安装完拓展请重启astrbot容器
 
-A template plugin for AstrBot plugin feature
-
-# 支持
-
-[帮助文档](https://astrbot.app)
+BY Fshcpy
