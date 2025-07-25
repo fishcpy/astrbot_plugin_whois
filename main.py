@@ -7,13 +7,14 @@ import socket
 # 创建翻译字典
 translation_dict = {
     'domain_name': '域名',
+    'domain': '域名',
     'registrar': '注册商',
     'whois_server': 'WHOIS服务器',
     'referral_url': '推荐链接',
     'updated_date': '更新日期',
     'creation_date': '创建日期',
     'expiration_date': '到期日期',
-    'name_servers': '名称服务器（DS解析）',
+    'name_servers': '名称服务器（DNS解析）',
     'status': '状态',
     'emails': '邮箱',
     'dnssec': 'DNSSEC',
@@ -36,9 +37,24 @@ translation_dict = {
     'domain__id': '域名ID',
     'registrar_id': '注册商ID',
     'registrar_url': '注册商网址',
+    # 添加更多常见的字段名
+    'registry_domain_id': '注册域名ID',
+    'registrar_whois_server': '注册商WHOIS服务器',
+    'registrar_url': '注册商网址',
+    'updated_date': '更新日期',
+    'creation_date': '创建日期',
+    'registry_expiry_date': '注册到期日期',
+    'registrar': '注册商',
+    'registrar_iana_id': '注册商IANA ID',
+    'registrar_abuse_contact_email': '注册商滥用联系邮箱',
+    'registrar_abuse_contact_phone': '注册商滥用联系电话',
+    'domain_status': '域名状态',
+    'name_server': '名称服务器',
+    'dnssec': 'DNSSEC',
+    'url_of_the_icann_whois_inaccuracy_complaint_form': 'ICANN WHOIS投诉表单',
 }
 
-@register("whois_plugin", "YourName", "一个域名 WHOIS 查询插件", "1.0.0")
+@register("astrbot_plugin_whois", "YourName", "一个域名 WHOIS 查询插件", "1.0.0")
 class Main(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -72,10 +88,10 @@ class Main(Star):
     async def whois_command(self, event: AstrMessageEvent):
         """这是一个 whois 查询指令"""
         parts = event.message_str.strip().split()
-        if len(parts) < 1:
+        if len(parts) < 2:
             yield event.plain_result("请提供要查询的域名")
             return
-        domain = parts[0]  # 假设命令后直接跟域名
+        domain = parts[1]  # 第二个参数才是域名，第一个是命令名
 
         try:
             # 首先尝试使用python-whois库
@@ -120,10 +136,38 @@ class Main(Star):
                 filtered_result = {k: v for k, v in result.items() if v and str(v).strip() and str(v).strip() != 'None'}
                 
                 if filtered_result:
-                    whois_info = "\n".join(
-                        f"{translation_dict.get(key, key)}: {value}"
-                        for key, value in filtered_result.items() if value
-                    )
+                    whois_info_lines = []
+                    for key, value in filtered_result.items():
+                        if value:
+                            # 尝试多种方式匹配翻译
+                            translated_key = None
+                            
+                            # 1. 直接匹配
+                            if key in translation_dict:
+                                translated_key = translation_dict[key]
+                            # 2. 转换为小写后匹配
+                            elif key.lower() in translation_dict:
+                                translated_key = translation_dict[key.lower()]
+                            # 3. 替换下划线为空格后匹配
+                            elif key.replace('_', ' ') in translation_dict:
+                                translated_key = translation_dict[key.replace('_', ' ')]
+                            # 4. 替换下划线为空格并转小写后匹配
+                            elif key.replace('_', ' ').lower() in translation_dict:
+                                translated_key = translation_dict[key.replace('_', ' ').lower()]
+                            
+                            # 如果找到翻译，使用翻译；否则使用原始键名
+                            display_key = translated_key if translated_key else key
+                            
+                            # 处理列表类型的值
+                            if isinstance(value, list):
+                                value_str = ', '.join(str(v) for v in value if v)
+                            else:
+                                value_str = str(value)
+                            
+                            if value_str:
+                                whois_info_lines.append(f"{display_key}: {value_str}")
+                    
+                    whois_info = "\n".join(whois_info_lines)
                     if whois_info:
                         response = f"域名信息 ({domain}):\n{whois_info}"
                     else:
@@ -138,6 +182,10 @@ class Main(Star):
             response = f"查询域名 {domain} 信息时出错: {e}"
 
         response += "\n\n插件 BY FishCpy, 翻译 BY AcoFork"
+
+        response += "\n\n开源于https://github.com/fishcpy/astrbot_plugin_whois"
+
+        response += "\n\n由克劳德4在2小时内完成主要开发及BUG修复"
 
         yield event.plain_result(response)
 
