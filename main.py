@@ -75,6 +75,7 @@ class Main(Star):
         domain = parts[0]  # 假设命令后直接跟域名
     
         try:
+            # 尝试获取域名信息
             raw = ''
             result = whois.whois(domain)
             if result and hasattr(result, 'text'):
@@ -100,7 +101,7 @@ class Main(Star):
             response = f"域名信息 ({domain}):\n{whois_info}"
         else:
             response = f"无法获取解析的域名信息 ({domain})，但以下是原始WHOIS数据:\n{raw}" if raw else f"无法获取域名 {domain} 的信息"
-        except Exception as e:
+        except (whois.parser.PywhoisError, socket.error, ConnectionError, TimeoutError, Exception) as e:
             response = f"查询域名 {domain} 信息时出错: {e}"
     
         response += "\n\n插件 BY Fishcpy, 翻译 BY AcoFork"
