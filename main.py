@@ -6,92 +6,52 @@ import socket
 
 # 创建翻译字典
 translation_dict = {
-    # 基本域名信息
     'domain_name': '域名',
     'domain': '域名',
-    'domain_name_servers': '域名服务器',
     'registrar': '注册商',
-    'registrar_name': '注册商名称',
     'whois_server': 'WHOIS服务器',
     'referral_url': '推荐链接',
-    'registrar_url': '注册商网址',
-    'registrar_id': '注册商ID',
-    'registrar_iana_id': '注册商IANA ID',
-    
-    # 日期信息
     'updated_date': '更新日期',
     'creation_date': '创建日期',
     'expiration_date': '到期日期',
-    'registry_expiry_date': '注册局到期日期',
-    'registrar_registration_expiration_date': '注册商到期日期',
-    'last_updated': '最后更新',
-    'last_update': '最后更新',
-    'print_date': '打印日期',
-    
-    # 名称服务器
     'name_servers': '名称服务器（DNS解析）',
-    'nserver': '名称服务器',
-    'nameserver': '名称服务器',
-    'name_server': '名称服务器',
-    
-    # 状态信息
     'status': '状态',
-    'domain_status': '域名状态',
-    'registry_domain_status': '注册局域名状态',
-    'registrar_domain_status': '注册商域名状态',
-    
-    # 联系信息
     'emails': '邮箱',
-    'email': '邮箱',
+    'dnssec': 'DNSSEC',
+    'print_date': '打印日期',
+    'last_update': '最后更新',
+    'name': '姓名',
+    'org': '组织',
+    'address': '地址',
+    'city': '城市',
+    'state': '省份',
+    'registrant_postal_code': '邮政编码',
+    'country': '国家',
+    'registrant_name': '注册人姓名',
+    'registrant_address': '注册人地址',
+    'registrant_phone_number': '注册人电话',
     'registrant_email': '注册人邮箱',
     'admin_email': '管理员邮箱',
     'billing_email': '账单邮箱',
     'tech_email': '技术支持邮箱',
-    'registrant_name': '注册人姓名',
-    'registrant_organization': '注册人组织',
-    'registrant_address': '注册人地址',
-    'registrant_phone': '注册人电话',
-    'registrant_phone_number': '注册人电话',
-    'registrant_postal_code': '注册人邮政编码',
-    'registrant_city': '注册人城市',
-    'registrant_state': '注册人省份',
-    'registrant_country': '注册人国家',
-    
-    # 管理联系人
-    'admin_name': '管理员姓名',
-    'admin_organization': '管理员组织',
-    'admin_address': '管理员地址',
-    'admin_phone': '管理员电话',
-    'admin_city': '管理员城市',
-    'admin_state': '管理员省份',
-    'admin_country': '管理员国家',
-    
-    # 技术联系人
-    'tech_name': '技术联系人姓名',
-    'tech_organization': '技术联系人组织',
-    'tech_address': '技术联系人地址',
-    'tech_phone': '技术联系人电话',
-    'tech_city': '技术联系人城市',
-    'tech_state': '技术联系人省份',
-    'tech_country': '技术联系人国家',
-    
-    # 其他信息
-    'dnssec': 'DNSSEC',
-    'name': '姓名',
-    'org': '组织',
-    'organization': '组织',
-    'address': '地址',
-    'city': '城市',
-    'state': '省份',
-    'country': '国家',
-    'postal_code': '邮政编码',
-    'phone': '电话',
-    'fax': '传真',
     'domain__id': '域名ID',
-    'registry_domain_id': '注册局域名ID',
+    'registrar_id': '注册商ID',
+    'registrar_url': '注册商网址',
+    # 添加更多常见的字段名
+    'registry_domain_id': '注册域名ID',
     'registrar_whois_server': '注册商WHOIS服务器',
+    'registrar_url': '注册商网址',
+    'updated_date': '更新日期',
+    'creation_date': '创建日期',
+    'registry_expiry_date': '注册到期日期',
+    'registrar': '注册商',
+    'registrar_iana_id': '注册商IANA ID',
     'registrar_abuse_contact_email': '注册商滥用联系邮箱',
     'registrar_abuse_contact_phone': '注册商滥用联系电话',
+    'domain_status': '域名状态',
+    'name_server': '名称服务器',
+    'dnssec': 'DNSSEC',
+    'url_of_the_icann_whois_inaccuracy_complaint_form': 'ICANN WHOIS投诉表单',
 }
 
 @register("astrbot_plugin_whois", "YourName", "一个域名 WHOIS 查询插件", "1.0.0")
@@ -164,39 +124,52 @@ class Main(Star):
                     logger.info(f"手动查询原始结果: {raw[:200]}...")
                     result = {}
                     for line in raw.splitlines():
-                        line = line.strip()
-                        if ':' in line and not line.startswith('%') and not line.startswith('#') and not line.startswith('>>>') and not line.startswith('For more information'):
-                            # 处理包含冒号的行
-                            parts_line = line.split(':', 1)
-                            if len(parts_line) == 2:
-                                key, value = parts_line
-                                key = key.strip().lower()
-                                value = value.strip()
-                                
-                                # 清理键名，移除特殊字符
-                                key = key.replace(' ', '_').replace('-', '_').replace('/', '_')
-                                
-                                # 过滤掉无用的值
-                                if value and value != 'REDACTED FOR PRIVACY' and not value.startswith('Please query') and not value.startswith('Select Contact'):
-                                    result[key] = value
+                        if ':' in line and not line.strip().startswith('%') and not line.strip().startswith('#'):
+                            key, value = line.split(':', 1)
+                            key = key.strip().lower().replace(' ', '_').replace('-', '_')
+                            value = value.strip()
+                            if value:  # 只保存非空值
+                                result[key] = value
 
             if result and isinstance(result, dict):
                 # 过滤掉空值和无用信息
                 filtered_result = {k: v for k, v in result.items() if v and str(v).strip() and str(v).strip() != 'None'}
                 
                 if filtered_result:
-                    whois_info = []
+                    whois_info_lines = []
                     for key, value in filtered_result.items():
                         if value:
-                            # 获取翻译后的键名
-                            translated_key = translation_dict.get(key, key)
-                            # 如果是列表，转换为字符串
+                            # 尝试多种方式匹配翻译
+                            translated_key = None
+                            
+                            # 1. 直接匹配
+                            if key in translation_dict:
+                                translated_key = translation_dict[key]
+                            # 2. 转换为小写后匹配
+                            elif key.lower() in translation_dict:
+                                translated_key = translation_dict[key.lower()]
+                            # 3. 替换下划线为空格后匹配
+                            elif key.replace('_', ' ') in translation_dict:
+                                translated_key = translation_dict[key.replace('_', ' ')]
+                            # 4. 替换下划线为空格并转小写后匹配
+                            elif key.replace('_', ' ').lower() in translation_dict:
+                                translated_key = translation_dict[key.replace('_', ' ').lower()]
+                            
+                            # 如果找到翻译，使用翻译；否则使用原始键名
+                            display_key = translated_key if translated_key else key
+                            
+                            # 处理列表类型的值
                             if isinstance(value, list):
-                                value = ', '.join(str(v) for v in value if v)
-                            whois_info.append(f"{translated_key}: {value}")
+                                value_str = ', '.join(str(v) for v in value if v)
+                            else:
+                                value_str = str(value)
+                            
+                            if value_str:
+                                whois_info_lines.append(f"{display_key}: {value_str}")
                     
+                    whois_info = "\n".join(whois_info_lines)
                     if whois_info:
-                        response = f"域名信息 ({domain}):\n" + "\n".join(whois_info)
+                        response = f"域名信息 ({domain}):\n{whois_info}"
                     else:
                         response = f"无法获取域名 {domain} 的详细信息，可能需要手动查询。"
                 else:
@@ -209,6 +182,10 @@ class Main(Star):
             response = f"查询域名 {domain} 信息时出错: {e}"
 
         response += "\n\n插件 BY FishCpy, 翻译 BY AcoFork"
+
+        response += "\n\n开源于https://github.com/fishcpy/astrbot_plugin_whois"
+
+        response += "\n\n由克劳德4在2小时内完成主要开发及BUG修复"
 
         yield event.plain_result(response)
 
