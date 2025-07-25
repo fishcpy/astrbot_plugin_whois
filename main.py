@@ -115,7 +115,7 @@ class Main(Star):
             return None
 
     @filter.command("whois")
-    async def whois_command(self, event: AstrMessageEvent):
+    async def whois_command(self, event: AstrMessageEvent, *args, **kwargs):
         """这是一个 whois 查询指令"""
         parts = event.message_str.strip().split()
         if len(parts) < 2:
