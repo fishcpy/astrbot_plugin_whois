@@ -35,7 +35,7 @@ translation_dict = {
     'registrar_url': '注册商网址',
 }
 
-@register("whois", "fishcpy, "查询域名的 WHOIS 信息", "1.0.0")
+@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.0")
 class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
