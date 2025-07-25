@@ -79,6 +79,7 @@ class WhoisPlugin(Star):
                         whois_info.append(f"{key_display}: {str(value)}")
             
             response = f"域名 {domain} 的 WHOIS 信息：\n\n" + "\n".join(whois_info)
+            response += "\n\n插件 BY Fishcpy , 翻译 BY AcoFork\n开源于 https://github.com/fishcpy/astrbot_plugin_whois\n由克劳德4在2小时内完成主要开发和BUG修复"
             yield event.plain_result(response)
 
         except Exception as e:
