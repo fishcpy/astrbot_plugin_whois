@@ -38,7 +38,7 @@ translation_dict = {
     'registrar_url': '注册商网址',
 }
 
-@register("whois_plugin", "YourName", "一个域名 WHOIS 查询插件", "1.0.0")
+@register("astrbot_plugin_whois", "YourName", "一个域名 WHOIS 查询插件", "1.0.0")
 class Main(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -72,10 +72,10 @@ class Main(Star):
     async def whois_command(self, event: AstrMessageEvent):
         """这是一个 whois 查询指令"""
         parts = event.message_str.strip().split()
-        if len(parts) < 1:
+        if len(parts) < 2:
             yield event.plain_result("请提供要查询的域名")
             return
-        domain = parts[0]  # 假设命令后直接跟域名
+        domain = parts[1]  # 第二个参数才是域名，第一个是命令名
 
         try:
             # 首先尝试使用python-whois库
