@@ -71,14 +71,14 @@ class WhoisPlugin(Star):
                     key_display = translation_dict.get(key, key)
                     if isinstance(value, list):
                         value_display = "\n".join(str(v) for v in value)
-                        whois_info.append(f"**{key_display}**:\n{value_display}")
+                        whois_info.append(f"{key_display}:\n{value_display}")
                     elif isinstance(value, datetime.datetime):
                         value_display = value.strftime("%Y-%m-%d %H:%M:%S")
-                        whois_info.append(f"**{key_display}**: {value_display}")
+                        whois_info.append(f"{key_display}: {value_display}")
                     else:
-                        whois_info.append(f"**{key_display}**: {str(value)}")
+                        whois_info.append(f"{key_display}: {str(value)}")
             
-            response = f"域名 **{domain}** 的 WHOIS 信息：\n\n" + "\n".join(whois_info)
+            response = f"域名 {domain} 的 WHOIS 信息：\n\n" + "\n".join(whois_info)
             yield event.plain_result(response)
 
         except Exception as e:
