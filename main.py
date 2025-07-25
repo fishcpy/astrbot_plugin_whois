@@ -75,11 +75,15 @@ class WhoisPlugin(Star):
         try:
             result = whois.whois(domain)
             if result:
-                whois_info = "\n".join(
+                info_lines = [
                     f"{self.translation_dict.get(key, key)}: {value}"
                     for key, value in result.items() if value
-                )
-                response = f"域名信息 ({domain}):\n{whois_info}"
+                ]
+                if info_lines:
+                    whois_info = "\n".join(info_lines)
+                    response = f"域名信息 ({domain}):\n{whois_info}"
+                else:
+                    response = f"域名 {domain} 没有详细信息。"
             else:
                 response = f"无法获取域名 {domain} 的信息"
         except Exception as e:
