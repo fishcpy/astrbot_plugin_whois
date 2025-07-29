@@ -35,7 +35,7 @@ translation_dict = {
     'registrar_url': '注册商网址',
 }
 
-@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.0")
+@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.1")
 class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -45,7 +45,7 @@ class WhoisPlugin(Star):
         pass
 
     @filter.command("whois")
-    async def whois_command(self, event: AstrMessageEvent, context, **kwargs):
+    async def whois_command(self, event: AstrMessageEvent):
         """查询一个域名的 whois 信息"""
         message_text = event.message_str.strip()
         command_name = "whois"
