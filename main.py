@@ -45,7 +45,7 @@ class WhoisPlugin(Star):
         pass
 
     @filter.command("whois")
-    async def whois_command(self, event: AstrMessageEvent):
+    async def whois_command(self, event: AstrMessageEvent, context, **kwargs):
         """查询一个域名的 whois 信息"""
         message_text = event.message_str.strip()
         command_name = "whois"
