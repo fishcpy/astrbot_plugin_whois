@@ -45,16 +45,8 @@ class WhoisPlugin(Star):
         pass
 
     @filter.command("whois")
-    async def whois_command(self, event: AstrMessageEvent):
+    async def whois_command(self, event: AstrMessageEvent, domain: str):
         """查询一个域名的 whois 信息"""
-        message_text = event.message_str.strip()
-        command_name = "whois"
-
-        if message_text.lower().startswith(command_name):
-            domain = message_text[len(command_name):].strip()
-        else:
-            domain = message_text
-
         if not domain:
             yield event.plain_result("请提供要查询的域名。用法：/whois <域名>")
             return
