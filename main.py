@@ -35,7 +35,7 @@ translation_dict = {
     'registrar_url': '注册商网址',
 }
 
-@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.1")
+@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.0")
 class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -70,17 +70,15 @@ class WhoisPlugin(Star):
                 if value:
                     key_display = translation_dict.get(key, key)
                     if isinstance(value, list):
-                        # 对于列表类型，将多个值用逗号分隔在同一行
-                        value_display = ", ".join(str(v) for v in value)
-                        whois_info.append(f"{key_display}: {value_display}")
+                        value_display = "\n".join(str(v) for v in value)
+                        whois_info.append(f"{key_display}:\n{value_display}")
                     elif isinstance(value, datetime.datetime):
                         value_display = value.strftime("%Y-%m-%d %H:%M:%S")
                         whois_info.append(f"{key_display}: {value_display}")
                     else:
                         whois_info.append(f"{key_display}: {str(value)}")
             
-            # 使用单个换行符，让系统的t2i处理添加适当的间距
-            response = f"域名 {domain} 的 WHOIS 信息：" + "\n" + "\n".join(whois_info)
+            response = f"域名 {domain} 的 WHOIS 信息：\n\n" + "\n".join(whois_info)
             yield event.plain_result(response)
 
         except Exception as e:
