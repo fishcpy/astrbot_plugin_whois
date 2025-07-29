@@ -12,6 +12,8 @@ docker 安装的 astrbot 安装完拓展请重启astrbot容器
 
 /whois fis.ink
 
+更新请先卸载
+
 好用就点个🌟吧 https://github.com/fishcpy/astrbot_plugin_whois
 
 由克劳德4在2小时内完成主要开发和BUG修复
