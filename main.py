@@ -71,9 +71,8 @@ class WhoisPlugin(Star):
                     else:
                         whois_info.append(f"{key_display}: {str(value)}")
             
-            yield event.plain_result(f"域名 {domain} 的 WHOIS 信息：")
-            for info in whois_info:
-                yield event.plain_result(info)
+            response = f"域名 {domain} 的 WHOIS 信息： " + "; ".join(whois_info)
+            yield event.plain_result(response)
 
         except Exception as e:
             yield event.plain_result(f"查询域名 {domain} 时发生错误：{e}")
