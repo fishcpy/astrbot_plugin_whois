@@ -71,7 +71,7 @@ class WhoisPlugin(Star):
                     else:
                         whois_info.append(f"{key_display}: {str(value)}")
             
-            response = f"域名 {domain} 的 WHOIS 信息：\n" + "\n".join(whois_info)
+            response = f"域名 {domain} 的 WHOIS 信息：\n\n" + "\n\n".join(whois_info)
             yield event.plain_result(response)
 
         except Exception as e:
