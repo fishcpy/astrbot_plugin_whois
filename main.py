@@ -1,10 +1,25 @@
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
+import sys
+import os
+import datetime
+
+# 检查是否存在whois模块，如果不存在则尝试自动安装
 try:
     import whois
 except ImportError:
-    raise ImportError("请安装 whois 和 python-whois 模块: pip install whois python-whois")
-import datetime
+    print("正在尝试自动安装whois模块...")
+    try:
+        import subprocess
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "python-whois"])
+        import whois
+        print("whois模块安装成功!")
+    except Exception as e:
+        print(f"自动安装失败: {e}")
+        print("请手动执行以下命令安装依赖:")
+        print("pip install python-whois")
+        # 不直接抛出异常，而是提供更友好的错误信息
+        whois = None
 
 # 创建翻译字典
 translation_dict = {
@@ -38,14 +53,17 @@ translation_dict = {
     'registrar_url': '注册商网址',
 }
 
-@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.1")
+@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.2")
 class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
+        self.whois_available = whois is not None
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
-        pass
+        if not self.whois_available:
+            print("警告: whois模块未安装，插件功能将受限")
+            print("请使用以下命令安装依赖: pip install python-whois")
 
     @filter.command("whois")
     async def whois_command(self, event: AstrMessageEvent, domain: str):
@@ -53,6 +71,10 @@ class WhoisPlugin(Star):
 
         if not domain:
             yield event.plain_result("请提供要查询的域名。用法：/whois <域名>")
+            return
+            
+        if not self.whois_available:
+            yield event.plain_result("whois模块未安装，无法执行查询。请联系管理员安装python-whois模块。")
             return
 
         try:
