@@ -53,7 +53,7 @@ translation_dict = {
     'registrar_url': '注册商网址',
 }
 
-@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.4")
+@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.5")
 class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -101,7 +101,7 @@ class WhoisPlugin(Star):
                         # 跳过处理有问题的字段
                         continue
             
-            response = f"域名 {domain} 的 WHOIS 信息：\n\n" + "\n\n".join(whois_info)
+            response = f"域名 {domain} 的 WHOIS 信息：\n" + "\n".join(whois_info)
             return response
 
         except Exception as e:
