@@ -1,8 +1,19 @@
 # WHOIS插件
 
-安装后请前往控制台页面安装pip拓展 whois 和 pyhton-whois
+## 安装步骤
 
-docker 安装的 astrbot 安装完拓展请重启astrbot容器
+1. 安装插件后，请前往控制台页面安装以下pip扩展:
+   ```
+   pip install whois python-whois
+   ```
+
+2. 如果使用docker安装的astrbot，安装完扩展后请重启astrbot容器
+
+3. 如果安装后仍然遇到错误，请尝试以下命令:
+   ```
+   pip uninstall whois python-whois
+   pip install whois python-whois --force-reinstall
+   ```
 
 # 指令
 

@@ -1,6 +1,9 @@
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
-import whois
+try:
+    import whois
+except ImportError:
+    raise ImportError("请安装 whois 和 python-whois 模块: pip install whois python-whois")
 import datetime
 
 # 创建翻译字典
@@ -54,22 +57,30 @@ class WhoisPlugin(Star):
 
         try:
             w = whois.whois(domain)
+            if w is None:
+                yield event.plain_result(f"无法查询域名 {domain}，请检查域名是否正确。")
+                return
+                
             if not w.get('domain_name'):
                 yield event.plain_result(f"无法查询到域名 {domain} 的 WHOIS 信息，请检查域名是否正确。")
                 return
 
             whois_info = []
             for key, value in w.items():
-                if value:
+                if value is not None:
                     key_display = translation_dict.get(key, key)
-                    if isinstance(value, list):
-                        value_display = ", ".join(str(v) for v in value)
-                        whois_info.append(f"{key_display}: {value_display}")
-                    elif isinstance(value, datetime.datetime):
-                        value_display = value.strftime("%Y-%m-%d %H:%M:%S")
-                        whois_info.append(f"{key_display}: {value_display}")
-                    else:
-                        whois_info.append(f"{key_display}: {str(value)}")
+                    try:
+                        if isinstance(value, list):
+                            value_display = ", ".join(str(v) for v in value if v is not None)
+                            whois_info.append(f"{key_display}: {value_display}")
+                        elif isinstance(value, datetime.datetime):
+                            value_display = value.strftime("%Y-%m-%d %H:%M:%S")
+                            whois_info.append(f"{key_display}: {value_display}")
+                        else:
+                            whois_info.append(f"{key_display}: {str(value)}")
+                    except Exception as e:
+                        # 跳过处理有问题的字段
+                        continue
             
             response = f"域名 {domain} 的 WHOIS 信息：\n\n" + "\n\n".join(whois_info)
             yield event.plain_result(response)
