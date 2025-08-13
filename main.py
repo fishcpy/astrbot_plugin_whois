@@ -53,7 +53,7 @@ translation_dict = {
     'registrar_url': '注册商网址',
 }
 
-@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.5")
+@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.6")
 class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -86,16 +86,19 @@ class WhoisPlugin(Star):
 
             whois_info = []
             for key, value in w.items():
-                if value is not None:
+                if value is not None and value != "":  # 排除空值
                     key_display = translation_dict.get(key, key)
                     try:
                         if isinstance(value, list):
-                            value_display = ", ".join(str(v) for v in value if v is not None)
-                            whois_info.append(f"{key_display}: {value_display}")
+                            # 过滤掉None和空字符串
+                            filtered_values = [str(v) for v in value if v is not None and str(v).strip() != ""]
+                            if filtered_values:  # 确保有值才添加
+                                value_display = ", ".join(filtered_values)
+                                whois_info.append(f"{key_display}: {value_display}")
                         elif isinstance(value, datetime.datetime):
                             value_display = value.strftime("%Y-%m-%d %H:%M:%S")
                             whois_info.append(f"{key_display}: {value_display}")
-                        else:
+                        elif str(value).strip():  # 确保非空字符串
                             whois_info.append(f"{key_display}: {str(value)}")
                     except Exception as e:
                         # 跳过处理有问题的字段
