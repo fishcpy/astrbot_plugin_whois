@@ -4,22 +4,22 @@ import sys
 import os
 import datetime
 
-# 检查是否存在whois模块，如果不存在则尝试自动安装
+# 检查是否存在python-whois模块，如果不存在则尝试自动安装
 try:
-    import whois
+    import whois as python_whois
 except ImportError:
-    print("正在尝试自动安装whois模块...")
+    print("正在尝试自动安装python-whois模块...")
     try:
         import subprocess
         subprocess.check_call([sys.executable, "-m", "pip", "install", "python-whois"])
-        import whois
-        print("whois模块安装成功!")
+        import whois as python_whois
+        print("python-whois模块安装成功!")
     except Exception as e:
         print(f"自动安装失败: {e}")
         print("请手动执行以下命令安装依赖:")
         print("pip install python-whois")
         # 不直接抛出异常，而是提供更友好的错误信息
-        whois = None
+        python_whois = None
 
 # 创建翻译字典
 translation_dict = {
@@ -53,16 +53,16 @@ translation_dict = {
     'registrar_url': '注册商网址',
 }
 
-@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.3")
+@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.4")
 class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
-        self.whois_available = whois is not None
+        self.whois_available = python_whois is not None
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
         if not self.whois_available:
-            print("警告: whois模块未安装，插件功能将受限")
+            print("警告: python-whois模块未安装，插件功能将受限")
             print("请使用以下命令安装依赖: pip install python-whois")
 
     @filter.command("whois")
@@ -77,7 +77,7 @@ class WhoisPlugin(Star):
             return "whois模块未安装，无法执行查询。请联系管理员安装python-whois模块。"
 
         try:
-            w = whois.whois(domain)
+            w = python_whois.whois(domain)
             if w is None:
                 return f"无法查询域名 {domain}，请检查域名是否正确。"
                 
