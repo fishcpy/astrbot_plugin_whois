@@ -53,7 +53,7 @@ translation_dict = {
     'registrar_url': '注册商网址',
 }
 
-@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.2")
+@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.3")
 class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -66,26 +66,23 @@ class WhoisPlugin(Star):
             print("请使用以下命令安装依赖: pip install python-whois")
 
     @filter.command("whois")
-    async def whois_command(self, event: AstrMessageEvent, domain: str):
+    async def whois_command(self, event: AstrMessageEvent, domain: str = None):
         """查询一个域名的 whois 信息"""
 
         if not domain:
-            yield event.plain_result("请提供要查询的域名。用法：/whois <域名>")
-            return
+            # 使用 return 直接返回消息，而不是使用 yield
+            return "请提供要查询的域名。用法：/whois <域名>"
             
         if not self.whois_available:
-            yield event.plain_result("whois模块未安装，无法执行查询。请联系管理员安装python-whois模块。")
-            return
+            return "whois模块未安装，无法执行查询。请联系管理员安装python-whois模块。"
 
         try:
             w = whois.whois(domain)
             if w is None:
-                yield event.plain_result(f"无法查询域名 {domain}，请检查域名是否正确。")
-                return
+                return f"无法查询域名 {domain}，请检查域名是否正确。"
                 
             if not w.get('domain_name'):
-                yield event.plain_result(f"无法查询到域名 {domain} 的 WHOIS 信息，请检查域名是否正确。")
-                return
+                return f"无法查询到域名 {domain} 的 WHOIS 信息，请检查域名是否正确。"
 
             whois_info = []
             for key, value in w.items():
@@ -105,10 +102,10 @@ class WhoisPlugin(Star):
                         continue
             
             response = f"域名 {domain} 的 WHOIS 信息：\n\n" + "\n\n".join(whois_info)
-            yield event.plain_result(response)
+            return response
 
         except Exception as e:
-            yield event.plain_result(f"查询域名 {domain} 时发生错误：{e}")
+            return f"查询域名 {domain} 时发生错误：{e}"
 
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
