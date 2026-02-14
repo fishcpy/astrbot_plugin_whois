@@ -66,12 +66,14 @@ class WhoisPlugin(Star):
             print("请使用以下命令安装依赖: pip install python-whois")
 
     @filter.command("whois")
-    async def whois_command(self, event: AstrMessageEvent, *args, **kwargs):
+    async def whois_command(self, event: AstrMessageEvent):
         """查询一个域名的 whois 信息"""
 
-        domain = kwargs.get('domain')
-        if not domain and args:
-            domain = args[0]
+        message = event.get_message().extract_plain_text().strip()
+        parts = message.split()
+        domain = None
+        if len(parts) > 1:
+            domain = parts[1]
         
         if not domain:
             # 使用 return 直接返回消息，而不是使用 yield
