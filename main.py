@@ -53,7 +53,7 @@ translation_dict = {
     'registrar_url': '注册商网址',
 }
 
-@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.6")
+@register("whois", "Fshcpy", "查询域名的 WHOIS 信息", "1.0.7")
 class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -65,18 +65,20 @@ class WhoisPlugin(Star):
             print("警告: python-whois模块未安装，插件功能将受限")
             print("请使用以下命令安装依赖: pip install python-whois")
 
-    @filter.command("whois")
-    async def whois_command(self, event: AstrMessageEvent):
-        """查询一个域名的 whois 信息"""
-
+    @filter()
+    async def whois_handler(self, event: AstrMessageEvent):
+        """处理 whois 命令"""
         message = event.get_message().extract_plain_text().strip()
+        
+        if not (message.startswith("/whois") or message.startswith("whois")):
+            return
+        
         parts = message.split()
         domain = None
         if len(parts) > 1:
             domain = parts[1]
         
         if not domain:
-            # 使用 return 直接返回消息，而不是使用 yield
             return "请提供要查询的域名。用法：/whois <域名>"
             
         if not self.whois_available:
@@ -92,22 +94,20 @@ class WhoisPlugin(Star):
 
             whois_info = []
             for key, value in w.items():
-                if value is not None and value != "":  # 排除空值
+                if value is not None and value != "":
                     key_display = translation_dict.get(key, key)
                     try:
                         if isinstance(value, list):
-                            # 过滤掉None和空字符串
                             filtered_values = [str(v) for v in value if v is not None and str(v).strip() != ""]
-                            if filtered_values:  # 确保有值才添加
+                            if filtered_values:
                                 value_display = ", ".join(filtered_values)
                                 whois_info.append(f"{key_display}: {value_display}")
                         elif isinstance(value, datetime.datetime):
                             value_display = value.strftime("%Y-%m-%d %H:%M:%S")
                             whois_info.append(f"{key_display}: {value_display}")
-                        elif str(value).strip():  # 确保非空字符串
+                        elif str(value).strip():
                             whois_info.append(f"{key_display}: {str(value)}")
                     except Exception as e:
-                        # 跳过处理有问题的字段
                         continue
             
             response = f"域名 {domain} 的 WHOIS 信息：\n" + "\n".join(whois_info)
