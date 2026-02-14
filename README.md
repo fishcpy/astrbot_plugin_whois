@@ -22,5 +22,3 @@
 好用就点个🌟吧 https://github.com/fishcpy/astrbot_plugin_whois
 
 由克劳德4在2小时内完成主要开发和BUG修复
-
-插件 BY Fishcpy , 翻译 BY AcoFork
