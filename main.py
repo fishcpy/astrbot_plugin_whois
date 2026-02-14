@@ -59,7 +59,7 @@ class WhoisPlugin(Star):
         super().__init__(context)
         self.whois_available = python_whois is not None
 
-    @filter()
+    @filter
     async def whois_handler(self, event: AstrMessageEvent):
         """处理 whois 命令"""
         message = event.get_message().extract_plain_text().strip()
