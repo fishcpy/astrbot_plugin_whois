@@ -64,7 +64,8 @@ class WhoisPlugin(Star):
         """处理 whois 命令"""
         message = event.get_message().extract_plain_text().strip()
         
-        if not (message.startswith("/whois") or message.startswith("whois")):
+        # AstrBot 会自动处理前缀，这里只需要检查命令本身
+        if not message.startswith("whois"):
             return
         
         parts = message.split()
