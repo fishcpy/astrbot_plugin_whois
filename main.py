@@ -59,8 +59,7 @@ class WhoisPlugin(Star):
         super().__init__(context)
         self.whois_available = python_whois is not None
 
-    @filter
-    async def whois_handler(self, event: AstrMessageEvent):
+    async def handle(self, event: AstrMessageEvent):
         """处理 whois 命令"""
         message = event.get_message().extract_plain_text().strip()
         
@@ -74,7 +73,7 @@ class WhoisPlugin(Star):
             domain = parts[1]
         
         if not domain:
-            return "请提供要查询的域名。用法：/whois <域名>"
+            return "请提供要查询的域名。用法：whois <域名>"
             
         if not self.whois_available:
             return "whois模块未安装，无法执行查询。请联系管理员安装python-whois模块。"
