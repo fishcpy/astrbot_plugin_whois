@@ -59,12 +59,6 @@ class WhoisPlugin(Star):
         super().__init__(context)
         self.whois_available = python_whois is not None
 
-    async def initialize(self):
-        """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
-        if not self.whois_available:
-            print("警告: python-whois模块未安装，插件功能将受限")
-            print("请使用以下命令安装依赖: pip install python-whois")
-
     @filter()
     async def whois_handler(self, event: AstrMessageEvent):
         """处理 whois 命令"""
@@ -115,7 +109,3 @@ class WhoisPlugin(Star):
 
         except Exception as e:
             return f"查询域名 {domain} 时发生错误：{e}"
-
-    async def terminate(self):
-        """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
-        pass
