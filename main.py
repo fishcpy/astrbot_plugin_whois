@@ -83,13 +83,11 @@ def _build_reply(data: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _parse_domain(message: str) -> str | None:
-    parts = message.strip().split()
-    if not parts:
-        return None
-    if len(parts) >= 2:
-        return parts[1].strip()
-    return None
+def _split_message(message: str) -> list[str]:
+    text = message.strip()
+    while text and not text[0].isalnum() and text[0] != "_":
+        text = text[1:].lstrip()
+    return text.split()
 
 
 @register(
@@ -103,14 +101,27 @@ class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
 
-    @filter.command("whois")
-    async def whois_command(self, event: AstrMessageEvent, domain: str = ""):
-        """WHOIS 查询。用法：/whois 域名"""
+    @filter.event_message_type(filter.EventMessageType.ALL)
+    async def on_message(self, event: AstrMessageEvent):
+        """监听消息并解析 /whois 域名。"""
+        message_str = (event.message_str or "").strip()
+        if not message_str:
+            return
+
+        parts = _split_message(message_str)
+        if not parts:
+            return
+
+        domain = ""
+        if parts[0].lower() == "whois":
+            domain = parts[1].strip() if len(parts) >= 2 else ""
+        elif len(parts) >= 2 and parts[1].lower() == "whois":
+            domain = parts[2].strip() if len(parts) >= 3 else ""
+        else:
+            return
+
         event.should_call_llm(False)
-        domain = (domain or "").strip()
-        if not domain:
-            message_str = event.message_str
-            domain = _parse_domain(message_str) or ""
+
         if not domain:
             yield event.plain_result("用法：/whois 域名")
             return
