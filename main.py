@@ -104,11 +104,13 @@ class WhoisPlugin(Star):
         super().__init__(context)
 
     @filter.command("whois")
-    async def whois_command(self, event: AstrMessageEvent):
+    async def whois_command(self, event: AstrMessageEvent, domain: str = ""):
         """WHOIS 查询。用法：/whois 域名"""
         event.should_call_llm(False)
-        message_str = event.message_str
-        domain = _parse_domain(message_str)
+        domain = (domain or "").strip()
+        if not domain:
+            message_str = event.message_str
+            domain = _parse_domain(message_str) or ""
         if not domain:
             yield event.plain_result("用法：/whois 域名")
             return
