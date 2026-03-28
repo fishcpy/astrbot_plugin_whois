@@ -101,26 +101,19 @@ class WhoisPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
 
-    @filter.event_message_type(filter.EventMessageType.ALL)
-    async def on_message(self, event: AstrMessageEvent):
-        """监听消息并解析 /whois 域名。"""
-        message_str = (event.message_str or "").strip()
-        if not message_str:
-            return
-
-        parts = _split_message(message_str)
-        if not parts:
-            return
-
-        domain = ""
-        if parts[0].lower() == "whois":
-            domain = parts[1].strip() if len(parts) >= 2 else ""
-        elif len(parts) >= 2 and parts[1].lower() == "whois":
-            domain = parts[2].strip() if len(parts) >= 3 else ""
-        else:
-            return
-
+    @filter.command("whois")
+    async def whois_command(self, event: AstrMessageEvent):
+        """WHOIS 查询。用法：/whois 域名"""
         event.should_call_llm(False)
+
+        message_str = (event.message_str or "").strip()
+        parts = _split_message(message_str) if message_str else []
+        domain = ""
+        if parts:
+            if parts[0].lower() == "whois":
+                domain = parts[1].strip() if len(parts) >= 2 else ""
+            elif len(parts) >= 2 and parts[1].lower() == "whois":
+                domain = parts[2].strip() if len(parts) >= 3 else ""
 
         if not domain:
             yield event.plain_result("用法：/whois 域名")
