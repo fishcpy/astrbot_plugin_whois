@@ -43,6 +43,10 @@ FIELD_TRANSLATIONS = {
     "registrar_url": "注册商网址",
 }
 
+ERROR_TRANSLATIONS = {
+    "Whois command returned no output": "WHOIS 命令没有返回任何结果，可能是该域名不支持传统 WHOIS 查询、查询服务暂时不可用，或已被服务器限制。",
+}
+
 
 class WhoisPlugin(Star):
     def __init__(self, context: Context):
@@ -61,46 +65,63 @@ class WhoisPlugin(Star):
             yield event.plain_result("域名格式不正确，请输入类似 example.com 的域名。")
             return
 
-        message = await self._query_fastest(domain)
+        message, errors = await self._query_fastest(domain)
         if not message:
-            yield event.plain_result(f"查询 {domain} 的 WHOIS/RDAP 信息失败，请稍后重试。")
+            error_text = "\n".join(errors) if errors else "请稍后重试。"
+            yield event.plain_result(f"查询 {domain} 的 WHOIS/RDAP 信息失败：\n{error_text}")
             return
 
         yield event.plain_result(message)
 
-    async def _query_fastest(self, domain: str) -> str:
+    async def _query_fastest(self, domain: str) -> tuple[str, list[str]]:
         tasks = [
             asyncio.create_task(self._query_whois(domain)),
             asyncio.create_task(self._query_rdap(domain)),
         ]
+        errors = []
 
         try:
             for task in asyncio.as_completed(tasks):
-                message = await task
+                message, error = await task
                 if message:
-                    return message
+                    return message, errors
+                if error:
+                    errors.append(error)
         finally:
             for task in tasks:
                 if not task.done():
                     task.cancel()
 
-        return ""
+        return "", errors
 
-    async def _query_whois(self, domain: str) -> str:
+    async def _query_whois(self, domain: str) -> tuple[str, str]:
         try:
             result = await asyncio.to_thread(whois.whois, domain)
-            return self._format_whois_result(domain, result)
+            return self._format_whois_result(domain, result), ""
         except Exception as exc:
             logger.warning(f"WHOIS 查询失败: {domain}: {exc}")
-            return ""
+            return "", self._format_query_error("WHOIS", domain, exc)
 
-    async def _query_rdap(self, domain: str) -> str:
+    async def _query_rdap(self, domain: str) -> tuple[str, str]:
         try:
             result = await asyncio.to_thread(self._fetch_rdap, domain)
-            return self._format_rdap_result(domain, result)
+            return self._format_rdap_result(domain, result), ""
         except Exception as exc:
             logger.warning(f"RDAP 查询失败: {domain}: {exc}")
-            return ""
+            return "", self._format_query_error("RDAP", domain, exc)
+
+    def _format_query_error(self, source: str, domain: str, exc: Exception) -> str:
+        message = str(exc)
+        translation = self._translate_error(message)
+        if translation:
+            message = f"{message}（{translation}）"
+        return f"{source}: 查询 {domain} 失败: {message}"
+
+    def _translate_error(self, message: str) -> str:
+        for original, translated in ERROR_TRANSLATIONS.items():
+            if original in message:
+                return translated
+        return ""
 
     def _fetch_rdap(self, domain: str) -> dict[str, Any]:
         url = f"https://rdap.org/domain/{domain}"
