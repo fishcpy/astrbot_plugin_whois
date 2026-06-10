@@ -46,13 +46,14 @@ class WhoisPlugin(Star):
         super().__init__(context)
 
     @filter.command("whois")
-    async def handle_whois(self, event: AstrMessageEvent, *args: str):
+    async def handle_whois(self, event: AstrMessageEvent, *command_args: str, **kwargs: Any):
         """查询域名 WHOIS 信息。用法: whois example.com"""
-        if not args:
+        domain_arg = self._get_first_arg(command_args, kwargs)
+        if not domain_arg:
             yield event.plain_result("请提供要查询的域名，例如: whois example.com")
             return
 
-        domain = self._normalize_domain(args[0])
+        domain = self._normalize_domain(domain_arg)
         if not domain:
             yield event.plain_result("域名格式不正确，请输入类似 example.com 的域名。")
             return
@@ -65,6 +66,19 @@ class WhoisPlugin(Star):
             return
 
         yield event.plain_result(self._format_whois_result(domain, result))
+
+    def _get_first_arg(self, command_args: tuple[str, ...], kwargs: dict[str, Any]) -> str:
+        raw_args = kwargs.get("args") or command_args
+        if isinstance(raw_args, str):
+            args = raw_args.split()
+        elif isinstance(raw_args, (list, tuple)):
+            args = [str(arg) for arg in raw_args if not self._is_empty(arg)]
+        elif raw_args:
+            args = [str(raw_args)]
+        else:
+            args = []
+
+        return args[0] if args else ""
 
     def _normalize_domain(self, raw_domain: str) -> str:
         domain = raw_domain.strip().lower()
