@@ -1,6 +1,9 @@
 import asyncio
+import json
 from datetime import date, datetime
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from urllib.parse import urlparse
 
 import whois
@@ -58,14 +61,58 @@ class WhoisPlugin(Star):
             yield event.plain_result("域名格式不正确，请输入类似 example.com 的域名。")
             return
 
-        try:
-            result = await asyncio.to_thread(whois.whois, domain)
-        except Exception as exc:
-            logger.warning(f"WHOIS 查询失败: {domain}: {exc}")
-            yield event.plain_result(f"查询 {domain} 的 WHOIS 信息失败: {exc}")
+        message = await self._query_fastest(domain)
+        if not message:
+            yield event.plain_result(f"查询 {domain} 的 WHOIS/RDAP 信息失败，请稍后重试。")
             return
 
-        yield event.plain_result(self._format_whois_result(domain, result))
+        yield event.plain_result(message)
+
+    async def _query_fastest(self, domain: str) -> str:
+        tasks = [
+            asyncio.create_task(self._query_whois(domain)),
+            asyncio.create_task(self._query_rdap(domain)),
+        ]
+
+        try:
+            for task in asyncio.as_completed(tasks):
+                message = await task
+                if message:
+                    return message
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+
+        return ""
+
+    async def _query_whois(self, domain: str) -> str:
+        try:
+            result = await asyncio.to_thread(whois.whois, domain)
+            return self._format_whois_result(domain, result)
+        except Exception as exc:
+            logger.warning(f"WHOIS 查询失败: {domain}: {exc}")
+            return ""
+
+    async def _query_rdap(self, domain: str) -> str:
+        try:
+            result = await asyncio.to_thread(self._fetch_rdap, domain)
+            return self._format_rdap_result(domain, result)
+        except Exception as exc:
+            logger.warning(f"RDAP 查询失败: {domain}: {exc}")
+            return ""
+
+    def _fetch_rdap(self, domain: str) -> dict[str, Any]:
+        url = f"https://rdap.org/domain/{domain}"
+        request = Request(url, headers={"User-Agent": "astrbot-plugin-whois/1.0.1"})
+        try:
+            with urlopen(request, timeout=12) as response:
+                body = response.read().decode("utf-8", errors="replace")
+                return json.loads(body)
+        except HTTPError as exc:
+            raise RuntimeError(f"RDAP HTTP {exc.code}") from exc
+        except URLError as exc:
+            raise RuntimeError(f"RDAP 网络错误: {exc.reason}") from exc
 
     def _get_first_arg(self, raw_args: Any) -> str:
         if isinstance(raw_args, str):
@@ -103,9 +150,72 @@ class WhoisPlugin(Star):
             lines.append(f"{label}: {self._format_value(value)}")
 
         if len(lines) == 1:
-            lines.append("未查询到可展示的 WHOIS 信息。")
+            return ""
 
         return "\n".join(lines)
+
+    def _format_rdap_result(self, domain: str, data: dict[str, Any]) -> str:
+        lines = [f"RDAP 查询结果: {domain}"]
+        field_values = {
+            "域名": data.get("ldhName") or data.get("unicodeName"),
+            "域名ID": data.get("handle"),
+            "状态": data.get("status"),
+            "名称服务器": [server.get("ldhName") for server in data.get("nameservers", [])],
+            "DNSSEC": data.get("secureDNS", {}).get("delegationSigned"),
+            "注册商": self._extract_registrar(data),
+            "注册人邮箱": self._extract_public_emails(data),
+            "链接": [link.get("href") for link in data.get("links", []) if link.get("href")],
+        }
+
+        field_values.update(self._extract_rdap_events(data))
+
+        for label, value in field_values.items():
+            if self._is_empty(value):
+                continue
+            lines.append(f"{label}: {self._format_value(value)}")
+
+        if len(lines) == 1:
+            return ""
+
+        return "\n".join(lines)
+
+    def _extract_rdap_events(self, data: dict[str, Any]) -> dict[str, Any]:
+        event_labels = {
+            "registration": "创建日期",
+            "last changed": "更新日期",
+            "expiration": "到期日期",
+        }
+        events = {}
+        for event in data.get("events", []):
+            label = event_labels.get(event.get("eventAction"))
+            if label and event.get("eventDate"):
+                events[label] = event.get("eventDate")
+        return events
+
+    def _extract_registrar(self, data: dict[str, Any]) -> str:
+        for entity in data.get("entities", []):
+            roles = entity.get("roles", [])
+            if "registrar" not in roles:
+                continue
+            vcard = entity.get("vcardArray", [])
+            if len(vcard) < 2:
+                return entity.get("handle", "")
+            for item in vcard[1]:
+                if item and item[0] == "fn" and len(item) >= 4:
+                    return item[3]
+            return entity.get("handle", "")
+        return ""
+
+    def _extract_public_emails(self, data: dict[str, Any]) -> list[str]:
+        emails = []
+        for entity in data.get("entities", []):
+            vcard = entity.get("vcardArray", [])
+            if len(vcard) < 2:
+                continue
+            for item in vcard[1]:
+                if item and item[0] == "email" and len(item) >= 4:
+                    emails.append(item[3])
+        return emails
 
     def _as_dict(self, result: Any) -> dict[str, Any]:
         if isinstance(result, dict):
