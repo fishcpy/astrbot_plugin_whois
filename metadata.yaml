@@ -1,0 +1,7 @@
+name: astrbot_plugin_whois
+desc: WHOIS 域名查询插件
+version: v1.0.0
+author: fishcpy
+repo: https://github.com/fishcpy/astrbot_plugin_whois
+dependencies:
+  - python-whois
