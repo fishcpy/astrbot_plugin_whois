@@ -1,5 +1,6 @@
 name: astrbot_plugin_whois
-desc: WHOIS 域名查询插件
+display_name: 域名 WHOIS 查询
+desc: 查询域名注册商、创建时间、到期时间、名称服务器等 WHOIS 信息。
 version: v1.0.0
 author: fishcpy
 repo: https://github.com/fishcpy/astrbot_plugin_whois
